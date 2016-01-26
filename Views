@@ -1,0 +1,49 @@
+Views
+ 
+ 
+1. View for all Available Events 
+CREATE VIEW view_events_available1 
+AS 
+SELECT event.event_id, event.event_name, event.type, event.description,
+GROUP_CONCAT(featuring.feat_name) as Featuring, event.duration,  
+(SELECT AVG(f.rating) from feedback f where f.event_id = event.event_id) as 'Average Rating'
+FROM event left join featuring on event.event_id = featuring.event_id 
+where event.event_id in (SELECT distinct event_venue.event_id from event_venue where
+CONCAT(event_venue.play_date," ",event_venue.play_time) > NOW()) 
+group by event.event_id;
+
+
+
+ 
+2. View for all Upcoming Events 
+
+CREATE VIEW view_events_upcoming 
+AS 
+SELECT event.event_id, event.event_name, event.type, event.description,
+GROUP_CONCAT(featuring.feat_name) as Featuring, event.duration,  
+(SELECT AVG(f.rating) from feedback f where f.event_id = event.event_id) as 'Average Rating'
+FROM event left join featuring on event.event_id = featuring.event_id 
+where event.event_id not in (SELECT distinct event_venue.event_id from event_venue);
+ 
+3. View for all Venues and play times for a selected Event 
+
+CREATE VIEW view_event_venues1 
+AS  
+SELECT event_venue.ev_id, event_venue.event_id, event_venue.venue_id,
+venue.venue_name,venue.address, event_venue.play_date, event_venue.play_time,
+event_venue.available_seats 
+from venue,event_venue 
+where event_venue.venue_id = venue.venue_id;
+ 
+4. View for Booking Details 
+
+CREATE VIEW booking_details
+AS 
+SELECT booking.booking_id as 'Booking ID', booking.customer_id as 'Customer ID', (SELECT
+event.event_name from event where event_id = (SELECT event_id from event_venue where
+event_venue.ev_id = booking.ev_id)) as 'Event Name', (SELECT venue.venue_name from venue where
+venue_id = (SELECT venue_id from event_venue where event_venue.ev_id = booking.ev_id)) as
+'Venue Name', (SELECT event_venue.play_date  from event_venue where event_venue.ev_id =
+booking.ev_id) as 'Date', (SELECT event_venue.play_time from event_venue where
+event_venue.ev_id = booking.ev_id) as 'Time' ,booking.number_of_tickets as 'Number of Tickets',
+booking.price as 'Total Cost' from booking;
